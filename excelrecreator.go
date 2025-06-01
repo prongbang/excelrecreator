@@ -24,6 +24,7 @@ type Options struct {
 	PreserveFormulas       bool
 	PreserveStyles         bool
 	PreserveDataValidation bool
+	PreserveImages         bool
 	SkipEmptyCells         bool
 	DefaultSheetName       string
 }
@@ -34,6 +35,7 @@ func DefaultOptions() *Options {
 		PreserveFormulas:       true,
 		PreserveStyles:         true,
 		PreserveDataValidation: true,
+		PreserveImages:         true,
 		SkipEmptyCells:         true,
 		DefaultSheetName:       "Sheet",
 	}
@@ -261,6 +263,13 @@ func (r *Recreator) recreateSheet(sheetMeta excelmetadata.SheetMetadata) error {
 		}
 	}
 
+	// Recreate images
+	if r.options.PreserveImages {
+		for _, img := range sheetMeta.Images {
+			r.recreateImage(sheetName, &img)
+		}
+	}
+
 	// Recreate sheet protection
 	if sheetMeta.Protection != nil && sheetMeta.Protection.Protected {
 		r.recreateSheetProtection(sheetName, sheetMeta.Protection)
@@ -341,6 +350,31 @@ func (r *Recreator) recreateDataValidation(sheetName string, dv excelmetadata.Da
 	}
 
 	return r.file.AddDataValidation(sheetName, validation)
+}
+
+func (r *Recreator) recreateImage(sheetName string, img *excelmetadata.ImageMetadata) error {
+	picture := &excelize.Picture{
+		Extension: img.Extension,
+		File:      img.File,
+		Format: &excelize.GraphicOptions{
+			AltText:             img.Format.AltText,
+			PrintObject:         img.Format.PrintObject,
+			Locked:              img.Format.Locked,
+			LockAspectRatio:     img.Format.LockAspectRatio,
+			AutoFit:             img.Format.AutoFit,
+			AutoFitIgnoreAspect: img.Format.AutoFitIgnoreAspect,
+			OffsetX:             img.Format.OffsetX,
+			OffsetY:             img.Format.OffsetY,
+			ScaleX:              img.Format.ScaleX,
+			ScaleY:              img.Format.ScaleY,
+			Hyperlink:           img.Format.Hyperlink,
+			HyperlinkType:       img.Format.HyperlinkType,
+			Positioning:         img.Format.Positioning,
+		},
+		InsertType: excelize.PictureInsertType(img.InsertType),
+	}
+
+	return r.file.AddPictureFromBytes(sheetName, img.Cell, picture)
 }
 
 func (r *Recreator) recreateSheetProtection(sheetName string, protection *excelmetadata.SheetProtection) error {

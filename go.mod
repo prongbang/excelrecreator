@@ -3,7 +3,7 @@ module github.com/prongbang/excelrecreator
 go 1.23.4
 
 require (
-	github.com/prongbang/excelmetadata v1.0.0
+	github.com/prongbang/excelmetadata v1.1.0
 	github.com/xuri/excelize/v2 v2.9.1
 )
 
