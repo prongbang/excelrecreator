@@ -89,11 +89,6 @@ func (r *Recreator) Recreate() error {
 		}
 	}
 
-	// Delete default sheet if we have sheets to create
-	if len(r.Metadata.Sheets) > 0 {
-		r.File.DeleteSheet("Sheet1")
-	}
-
 	// Recreate each sheet
 	for _, sheetMeta := range r.Metadata.Sheets {
 		if err := r.recreateSheet(sheetMeta); err != nil {
@@ -228,9 +223,17 @@ func (r *Recreator) recreateSheet(sheetMeta excelmetadata.SheetMetadata) error {
 	}
 
 	// Create sheet
-	_, err := r.File.NewSheet(sheetName)
+	index, err := r.File.NewSheet(sheetName)
 	if err != nil {
 		return err
+	}
+
+	// Delete default sheet if we have sheets to create
+	if len(r.Metadata.Sheets) > 0 {
+		if sheetMeta.Index == 0 {
+			r.File.SetActiveSheet(index)
+			_ = r.File.DeleteSheet("Sheet1")
+		}
 	}
 
 	// Set visibility
